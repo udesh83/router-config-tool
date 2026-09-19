@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CFSS Router Config Tool</title>
+
+<style>
+body{
+    font-family: Arial, sans-serif;
+    background:#f4f6f9;
+    margin:20px;
+}
+
+.container{
+    display:flex;
+    gap:20px;
+    max-width:1600px;
+    margin:auto;
+}
+
+.left-panel{
+    width:320px;
+    background:white;
+    padding:20px;
+    border-radius:10px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.15);
+}
+
+.right-panel{
+    flex:1;
+    background:white;
+    padding:20px;
+    border-radius:10px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.15);
+}
+
+h2{
+    color:#0078d4;
+    margin-top:0;
+}
+
+label{
+    display:block;
+    margin-top:15px;
+    margin-bottom:5px;
+    font-weight:bold;
+}
+
+input[type=file],
+select{
+    width:100%;
+    padding:10px;
+    border:1px solid #ccc;
+    border-radius:5px;
+    box-sizing:border-box;
+}
+
+button{
+    width:100%;
+    padding:12px;
+    margin-top:15px;
+    border:none;
+    border-radius:5px;
+    color:white;
+    cursor:pointer;
+    font-size:15px;
+}
+
+#modifyBtn{
+    background:#0078d4;
+}
+
+#modifyBtn:hover{
+    background:#005ea6;
+}
+
+#downloadBtn{
+    background:#28a745;
+}
+
+#downloadBtn:hover:not(:disabled){
+    background:#218838;
+}
+
+#downloadBtn:disabled{
+    background:#999;
+    cursor:not-allowed;
+}
+
+textarea{
+    width:100%;
+    height:800px;
+    border:1px solid #ccc;
+    border-radius:5px;
+    padding:10px;
+    box-sizing:border-box;
+    font-family:Consolas, monospace;
+    font-size:13px;
+    white-space:pre;
+}
+
+.footer{
+    text-align:center;
+    margin-top:20px;
+    font-size:12px;
+    color:#666;
+    border-top:1px solid #ddd;
+    padding-top:10px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="left-panel">
+
+        <h2>Router Config Tool</h2>
+
+        <label>Select Configuration File</label>
+        <input type="file" id="cfgFile" accept=".cfg,.txt">
+
+        <label>Router Model</label>
+        <select id="routerModel">
+            <option value="AR109">Huawei AR109</option>
+            <option value="AR617VW">Huawei AR617VW</option>
+            <option value="AR121">Huawei AR121</option>
+        </select>
+
+        <button id="modifyBtn" onclick="modifyConfig()">
+            Update
+        </button>
+
+        <button id="downloadBtn"
+                onclick="downloadConfig()"
+                disabled>
+            Download
+        </button>
+
+        <div class="footer">
+            Version 1.3
+        </div>
+
+    </div>
+
+    <div class="right-panel">
+
+        <h2>Update</h2>
+
+        <textarea id="modifiedPreview"
+                  readonly
+                  placeholder="Modified configuration will appear here..."></textarea>
+
+    </div>
+
+</div>
+
+<script>
+
+let modifiedContent = "";
+
+function modifyConfig()
+{
+    const file = document.getElementById("cfgFile").files[0];
+
+    if (!file)
+    {
+        alert("Please select a configuration file.");
+        return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = function(event)
+    {
+        let content = event.target.result;
+
+        const interfaceMap = {
+            "AR109": "GigabitEthernet0/0/4",
+            "AR617VW": "GigabitEthernet0/0/4",
+            "AR121": "Ethernet0/0/4"
+        };
+
+        const targetInterface =
+            interfaceMap[
+                document.getElementById("routerModel").value
+            ];
+
+        /* VLAN1 -> Vlanif1 */
+        content = content.replace(
+            /interface\s+VLAN(\d+)/gi,
+            "interface Vlanif$1"
+        );
+
+        /*
+         Find the interface block that contains:
+         ip address 192.168.8.190 255.255.255.0
+         and replace only that interface name
+        */
+        content = content.replace(
+            /(interface\s+)(GigabitEthernet\S+|Ethernet\S+)([\s\S]*?ip address\s+192\.168\.8\.190\s+255\.255\.255\.0)/i,
+            "$1" + targetInterface + "$3"
+        );
+
+        modifiedContent = content;
+
+        document.getElementById("modifiedPreview").value =
+            modifiedContent;
+
+        document.getElementById("downloadBtn").disabled =
+            false;
+
+        alert("Configuration modified successfully.");
+    };
+
+    reader.readAsText(file);
+}
+
+function downloadConfig()
+{
+    const file =
+        document.getElementById("cfgFile").files[0];
+
+    if (!file)
+    {
+        alert("No file selected.");
+        return;
+    }
+
+    const originalName = file.name;
+    const dotIndex = originalName.lastIndexOf(".");
+
+    let newFileName;
+
+    if(dotIndex > -1)
+    {
+        newFileName =
+            originalName.substring(0, dotIndex) +
+            "$" +
+            originalName.substring(dotIndex);
+    }
+    else
+    {
+        newFileName = originalName + "$";
+    }
+
+    const blob = new Blob(
+        [modifiedContent],
+        { type: "text/plain" }
+    );
+
+    const link = document.createElement("a");
+
+    link.href = URL.createObjectURL(blob);
+    link.download = newFileName;
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(link.href);
+}
+
+</script>
+
+</body>
+</html>
