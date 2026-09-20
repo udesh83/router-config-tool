@@ -7,7 +7,7 @@
 
 <style>
 body{
-    font-family: Arial, sans-serif;
+    font-family: Arial,sans-serif;
     background:#f4f6f9;
     margin:20px;
 }
@@ -95,7 +95,7 @@ textarea{
     border-radius:5px;
     padding:10px;
     box-sizing:border-box;
-    font-family:Consolas, monospace;
+    font-family:Consolas,monospace;
     font-size:13px;
     white-space:pre;
 }
@@ -147,11 +147,13 @@ textarea{
 
     <div class="right-panel">
 
-        <h2>Updated Configuration</h2>
+        <h2>Modified Configuration</h2>
 
-        <textarea id="modifiedPreview"
-                  readonly
-                  placeholder="Modified configuration will appear here..."></textarea>
+        <textarea
+            id="modifiedPreview"
+            readonly
+            placeholder="Modified configuration will appear here..."
+        ></textarea>
 
     </div>
 
@@ -183,33 +185,40 @@ function modifyConfig()
             "AR121": "Ethernet0/0/4"
         };
 
-        const targetInterface =
-            interfaceMap[
-                document.getElementById("routerModel").value
-            ];
+        const routerModel =
+            document.getElementById("routerModel").value;
 
-        /* VLAN -> Vlanif */
+        const targetInterface =
+            interfaceMap[routerModel];
+
+        /* Change VLAN to Vlanif */
         content = content.replace(
             /interface\s+VLAN(\d+)/gi,
             "interface Vlanif$1"
         );
 
-        /* Remove GigabitEthernet2/0/0 interface block */
+        /* Remove interface GigabitEthernet2/0/0 block */
         content = content.replace(
-            /interface\s+GigabitEthernet2\/0\/0[\s\S]*?(?=\n#|\ninterface |\nreturn|$)/gi,
+            /^interface\s+GigabitEthernet2\/0\/0[\s\S]*?(?=^#|^interface|\Z)/gmi,
             ""
         );
 
-        /* Change interface containing 192.168.8.190 */
+        /*
+           Find interface block containing
+           IP 192.168.8.190 and change interface
+        */
         content = content.replace(
             /(interface\s+)(GigabitEthernet\S+|Ethernet\S+)([\s\S]*?ip address\s+192\.168\.8\.190\s+255\.255\.255\.0)/i,
             "$1" + targetInterface + "$3"
         );
 
-        /* Update telnet permit interface */
+        /*
+           Update telnet permit interface
+           according to selected router model
+        */
         content = content.replace(
-            /telnet\s+server\s+permit\s+interface\s+\S+/gi,
-            "telnet server permit interface " + targetInterface
+            /(telnet\s+server\s+permit\s+interface\s+)(\S+)/gi,
+            "$1" + targetInterface
         );
 
         modifiedContent = content;
