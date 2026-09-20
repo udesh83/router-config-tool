@@ -7,9 +7,18 @@
 
 <style>
 body{
-    font-family: Arial,sans-serif;
+    font-family:Arial,sans-serif;
     background:#f4f6f9;
     margin:20px;
+}
+
+.login-container{
+    width:400px;
+    margin:80px auto;
+    background:#ffffff;
+    padding:30px;
+    border-radius:15px;
+    box-shadow:0 4px 20px rgba(0,0,0,0.15);
 }
 
 .container{
@@ -21,7 +30,7 @@ body{
 
 .left-panel{
     width:320px;
-    background:white;
+    background:#fff;
     padding:20px;
     border-radius:10px;
     box-shadow:0 2px 10px rgba(0,0,0,0.15);
@@ -29,7 +38,7 @@ body{
 
 .right-panel{
     flex:1;
-    background:white;
+    background:#fff;
     padding:20px;
     border-radius:10px;
     box-shadow:0 2px 10px rgba(0,0,0,0.15);
@@ -48,6 +57,8 @@ label{
 }
 
 input[type=file],
+input[type=text],
+input[type=password],
 select{
     width:100%;
     padding:10px;
@@ -67,10 +78,12 @@ button{
     font-size:15px;
 }
 
+.login-btn,
 #modifyBtn{
     background:#0078d4;
 }
 
+.login-btn:hover,
 #modifyBtn:hover{
     background:#005ea6;
 }
@@ -100,6 +113,12 @@ textarea{
     white-space:pre;
 }
 
+#errorMsg{
+    color:red;
+    text-align:center;
+    margin-top:15px;
+}
+
 .footer{
     text-align:center;
     margin-top:20px;
@@ -109,51 +128,104 @@ textarea{
     padding-top:10px;
 }
 </style>
-</head>
 
+</head>
 <body>
 
-<div class="container">
+<!-- LOGIN PAGE -->
 
-    <div class="left-panel">
+<div id="loginPage">
 
-        <h2>Router Config Tool</h2>
+    <div class="login-container">
 
-        <label>Select Configuration File</label>
-        <input type="file" id="cfgFile" accept=".cfg,.txt">
+        <div style="text-align:center;">
 
-        <label>Router Model</label>
-        <select id="routerModel">
-            <option value="AR109">Huawei AR109</option>
-            <option value="AR617VW">Huawei AR617VW</option>
-            <option value="AR121">Huawei AR121</option>
-        </select>
+            <h2>
+                CFSS Router Config Tool
+            </h2>
 
-        <button id="modifyBtn" onclick="modifyConfig()">
-            Update
-        </button>
+            <div style="
+                color:#666;
+                font-size:13px;
+                margin-bottom:5px;">
+                Developed by CFSS Tech-Experts © 2026
+            </div>
 
-        <button id="downloadBtn"
-                onclick="downloadConfig()"
-                disabled>
-            Download
-        </button>
+            <div style="
+                color:#0078d4;
+                font-size:12px;
+                font-weight:bold;
+                margin-bottom:20px;">
+                Version 1.5
+            </div>
 
-        <div class="footer">
-            Version 1.4
         </div>
+
+        <label>Username</label>
+        <input type="text" id="username">
+
+        <label>Password</label>
+        <input type="password" id="password">
+
+        <button class="login-btn" onclick="login()">
+            Login
+        </button>
+
+        <div id="errorMsg"></div>
 
     </div>
 
-    <div class="right-panel">
+</div>
 
-        <h2>Modified Configuration</h2>
+<!-- MAIN APPLICATION -->
 
-        <textarea
-            id="modifiedPreview"
-            readonly
-            placeholder="Modified configuration will appear here..."
-        ></textarea>
+<div id="mainApp" style="display:none;">
+
+    <div class="container">
+
+        <div class="left-panel">
+
+            <h2>Router Config Tool</h2>
+
+            <label>Select Configuration File</label>
+            <input type="file"
+                   id="cfgFile"
+                   accept=".cfg,.txt">
+
+            <label>Router Model</label>
+            <select id="routerModel">
+                <option value="AR109">Huawei AR109</option>
+                <option value="AR617VW">Huawei AR617VW</option>
+                <option value="AR121">Huawei AR121</option>
+            </select>
+
+            <button id="modifyBtn" onclick="modifyConfig()">
+                Update
+            </button>
+
+            <button id="downloadBtn"
+                    onclick="downloadConfig()"
+                    disabled>
+                Download
+            </button>
+
+            <div class="footer">
+                <strong>CFSS Router Config Tool v1.5</strong><br>
+                Developed by CFSS Tech-Experts © 2026
+            </div>
+
+        </div>
+
+        <div class="right-panel">
+
+            <h2>Modified Configuration</h2>
+
+            <textarea
+                id="modifiedPreview"
+                readonly
+                placeholder="Modified configuration will appear here..."></textarea>
+
+        </div>
 
     </div>
 
@@ -163,9 +235,50 @@ textarea{
 
 let modifiedContent = "";
 
+/* LOGIN */
+
+function login()
+{
+    const username =
+        document.getElementById("username").value.trim();
+
+    const password =
+        document.getElementById("password").value;
+
+    if(
+        username === "user" &&
+        password === "cfss@12345"
+    )
+    {
+        document.getElementById("loginPage").style.display = "none";
+        document.getElementById("mainApp").style.display = "block";
+    }
+    else
+    {
+        document.getElementById("errorMsg").innerText =
+            "Invalid username or password";
+    }
+}
+
+/* ENTER KEY LOGIN */
+
+document.addEventListener("keydown", function(e)
+{
+    if(
+        e.key === "Enter" &&
+        document.getElementById("loginPage").style.display !== "none"
+    )
+    {
+        login();
+    }
+});
+
+/* MODIFY CONFIG */
+
 function modifyConfig()
 {
-    const file = document.getElementById("cfgFile").files[0];
+    const file =
+        document.getElementById("cfgFile").files[0];
 
     if (!file)
     {
@@ -185,37 +298,34 @@ function modifyConfig()
             "AR121": "Ethernet0/0/4"
         };
 
-        const routerModel =
-            document.getElementById("routerModel").value;
-
         const targetInterface =
-            interfaceMap[routerModel];
+            interfaceMap[
+                document.getElementById("routerModel").value
+            ];
 
-        /* Change VLAN to Vlanif */
+        /* VLAN -> Vlanif */
+
         content = content.replace(
             /interface\s+VLAN(\d+)/gi,
             "interface Vlanif$1"
         );
 
         /* Remove interface GigabitEthernet2/0/0 block */
+
         content = content.replace(
             /^interface\s+GigabitEthernet2\/0\/0[\s\S]*?(?=^#|^interface|\Z)/gmi,
             ""
         );
 
-        /*
-           Find interface block containing
-           IP 192.168.8.190 and change interface
-        */
+        /* Replace interface containing 192.168.8.190 */
+
         content = content.replace(
             /(interface\s+)(GigabitEthernet\S+|Ethernet\S+)([\s\S]*?ip address\s+192\.168\.8\.190\s+255\.255\.255\.0)/i,
             "$1" + targetInterface + "$3"
         );
 
-        /*
-           Update telnet permit interface
-           according to selected router model
-        */
+        /* Update telnet permit interface */
+
         content = content.replace(
             /(telnet\s+server\s+permit\s+interface\s+)(\S+)/gi,
             "$1" + targetInterface
@@ -234,6 +344,8 @@ function modifyConfig()
 
     reader.readAsText(file);
 }
+
+/* DOWNLOAD */
 
 function downloadConfig()
 {
@@ -265,10 +377,11 @@ function downloadConfig()
 
     const blob = new Blob(
         [modifiedContent],
-        { type: "text/plain" }
+        { type:"text/plain" }
     );
 
-    const link = document.createElement("a");
+    const link =
+        document.createElement("a");
 
     link.href = URL.createObjectURL(blob);
     link.download = newFileName;
