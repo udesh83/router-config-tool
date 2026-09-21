@@ -15,7 +15,7 @@ body{
 .login-container{
     width:400px;
     margin:80px auto;
-    background:#ffffff;
+    background:#fff;
     padding:30px;
     border-radius:15px;
     box-shadow:0 4px 20px rgba(0,0,0,0.15);
@@ -128,37 +128,25 @@ textarea{
     padding-top:10px;
 }
 </style>
-
 </head>
+
 <body>
 
 <!-- LOGIN PAGE -->
 
 <div id="loginPage">
-
     <div class="login-container">
 
         <div style="text-align:center;">
+            <h2>CFSS Router Config Tool</h2>
 
-            <h2>
-                CFSS Router Config Tool
-            </h2>
-
-            <div style="
-                color:#666;
-                font-size:13px;
-                margin-bottom:5px;">
+            <div style="color:#666;font-size:13px;margin-bottom:5px;">
                 Developed by CFSS Tech-Experts © 2026
             </div>
 
-            <div style="
-                color:#0078d4;
-                font-size:12px;
-                font-weight:bold;
-                margin-bottom:20px;">
+            <div style="color:#0078d4;font-size:12px;font-weight:bold;margin-bottom:20px;">
                 Version 1.5
             </div>
-
         </div>
 
         <label>Username</label>
@@ -174,7 +162,6 @@ textarea{
         <div id="errorMsg"></div>
 
     </div>
-
 </div>
 
 <!-- MAIN APPLICATION -->
@@ -310,26 +297,60 @@ function modifyConfig()
             "interface Vlanif$1"
         );
 
-        /* Remove interface GigabitEthernet2/0/0 block */
+        /* REMOVE GigabitEthernet2/0/0 BLOCK */
 
         content = content.replace(
-            /^interface\s+GigabitEthernet2\/0\/0[\s\S]*?(?=^#|^interface|\Z)/gmi,
+            /^interface\s+GigabitEthernet2\/0\/0[\s\S]*?(?=^#|^interface|$)/gmi,
             ""
         );
 
-        /* Replace interface containing 192.168.8.190 */
+        /* REPLACE MANAGEMENT INTERFACE */
 
         content = content.replace(
             /(interface\s+)(GigabitEthernet\S+|Ethernet\S+)([\s\S]*?ip address\s+192\.168\.8\.190\s+255\.255\.255\.0)/i,
             "$1" + targetInterface + "$3"
         );
 
-        /* Update telnet permit interface */
+        /* REMOVE EXISTING TELNET COMMANDS */
 
         content = content.replace(
-            /(telnet\s+server\s+permit\s+interface\s+)(\S+)/gi,
-            "$1" + targetInterface
+            /^\s*telnet\s+server\s+permit\s+interface\s+.*$(\r?\n)?/gmi,
+            ""
         );
+
+        /* TELNET BLOCK */
+
+        const telnetBlock =
+            "#\n" +
+            "telnet server permit interface all\n" +
+            "#\n";
+
+        /* INSERT BEFORE #LAN INTERFACES */
+
+        if (/#\s*LAN\s*INTERFACES/i.test(content))
+        {
+            content = content.replace(
+                /#\s*LAN\s*INTERFACES/i,
+                telnetBlock + "#LAN INTERFACES"
+            );
+        }
+        else
+        {
+            const returnPos =
+                content.lastIndexOf("return");
+
+            if (returnPos !== -1)
+            {
+                content =
+                    content.substring(0, returnPos) +
+                    telnetBlock +
+                    content.substring(returnPos);
+            }
+            else
+            {
+                content += "\n" + telnetBlock;
+            }
+        }
 
         modifiedContent = content;
 
